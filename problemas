@@ -1,0 +1,26 @@
+data Itinerario = Itinerario {nombreBebida::String
+							 ,acciones::[Bebida]
+							 ,horario::Float}deriving(Show,Eq)
+
+
+mezclaExplosiva = Itinerario "Mezcla Explosiva" [GrogXD,GrogXD,Klusener "huevo",Klusener "frutilla"] 2.5
+
+--El siguiente itinerario no funcionaria
+--itinerarioBasico = Itinerario "Itinerario Basico" [Accion Klusener "huevo",Accion Klusener "chocolate" ,Accion Rescatarse 2,Accion JarraLoca] 5.0
+
+itinerarios::Itinerario -> Cliente -> Cliente
+itinerarios itineDeBebidas (Cliente name stamina friends bebidas) = foldl (tomar) (Cliente name stamina friends bebidas) (acciones itineDeBebidas)
+
+----
+----
+----
+----
+----
+----
+SOLUCION:
+
+data Itinerario = Itinerario {nombreBebida::String
+							 ,acciones::[Accion]
+							 ,horario::Float}deriving(Show,Eq)
+
+data Accion =  Rescatarse Int | Sociabilizar Cliente | Bebida  deriving(Show,Eq)

@@ -1,0 +1,85 @@
+--v.3 cambios: la funcion tomar va a recibir primero a un cliente y luego la bebida. Asi podemos usar la funcion de orden sup "map"
+-- en la funcion tomar tragos
+
+
+data Cliente = Cliente { nombre::String
+						,resistencia::Int
+						,amigos::[Cliente]
+						,yaTomo::[(Bebida)]} deriving(Show,Eq)
+
+
+
+rodri = Cliente "Rodri" 55 [] [(Tintico)]
+marcos = Cliente "Marcos" 40 [rodri] [(Klusener "guinda")]
+cristian = Cliente "Cristian" 2 [] [(GrogXD),(JarraLoca)]
+ana = Cliente "Ana" 120 [marcos,rodri] []
+
+data Bebida = Klusener String | GrogXD | Tintico | Soda Int | JarraLoca deriving(Show,Eq)
+
+tomar::Cliente->Bebida->Cliente
+
+tomar (Cliente name stamina friends bebidas) (Klusener sabor) = Cliente name (bajarResistencia (length sabor) stamina) friends (bebidas++[(Klusener sabor)])
+
+tomar (Cliente name _ friends bebidas) (GrogXD)  = Cliente name 0 friends (bebidas++[(GrogXD)])
+
+tomar (Cliente name stamina friends bebidas) (Tintico)  = Cliente name (subirResistencia (5 * length friends) stamina) friends (bebidas++[Tintico])
+
+tomar (Cliente name stamina friends bebidas) (Soda fuerza) = Cliente (agregarERP fuerza name) stamina friends (bebidas++[(Soda fuerza)])
+
+tomar (Cliente name stamina friends bebidas) (JarraLoca) = Cliente name (bajarResistencia 10 stamina) (pasarJarra friends) (bebidas++[(JarraLoca)])
+
+pasarJarra :: [Cliente] -> [Cliente]
+pasarJarra [] = []
+pasarJarra (unCliente : elResto) = tomar unCliente (JarraLoca) : (pasarJarra elResto)
+
+rescatarse::Cliente->Int->Cliente
+rescatarse (Cliente name stamina friends bebidas)  hora 
+	| hora > 3 = Cliente name (stamina+200) friends bebidas
+	| otherwise = Cliente name (stamina+100) friends bebidas
+
+
+agregarERP::Int->String->String
+agregarERP fuerza nombre = "e"++concat(replicate fuerza "r")++"p"++nombre
+
+bajarResistencia::Int->Int -> Int
+bajarResistencia disminuir resistencia = resistencia - disminuir
+
+subirResistencia::Int->Int-> Int
+subirResistencia subir resistencia = resistencia + subir
+
+
+comoEsta::Cliente->String
+comoEsta (Cliente name stamina friends _)
+	| stamina > 50 = "fresco"
+	| length(friends) > 1 = "piola"
+	| otherwise = "duro"
+
+
+agregarAmigo::Cliente->Cliente->Cliente
+agregarAmigo (Cliente name stamina friends bebidas) (Cliente name2 stamina2 friends2 bebidas2) 
+	| puedeAgregar (Cliente name stamina friends bebidas) (Cliente name2 stamina2 friends2 bebidas2) = Cliente name stamina (friends ++[(Cliente name2 stamina2 friends2 bebidas2)]) bebidas
+	| otherwise = Cliente name stamina friends bebidas
+
+puedeAgregar:: Cliente -> Cliente-> Bool
+puedeAgregar (Cliente name stamina friends _) (Cliente name2 stamina2 friends2 bebidas2)
+ 	| name == name2 = False
+ 	| elem (Cliente name2 stamina2 friends2 bebidas2) (friends) = False
+ 	| otherwise = True
+
+dameOtro::Cliente -> Cliente
+dameOtro (Cliente name stamina friends bebidas) = tomar (Cliente name stamina friends bebidas) (last bebidas) 
+
+--tomarTragos:: Cliente -> [Bebida] -> Cliente
+
+--tomarTragos (Cliente name stamina friends bebidas) [listaBebidas] = map (tomar (Cliente name stamina friends bebidas)) [listaBebidas]
+--tomarTragos (Cliente name stamina friends bebidas) [listaBebidas] = (\ bebida -> tomar (Cliente name stamina friends bebidas) bebida) listaBebidas
+--pattern match failure
+
+cualesPuedeTomar::Cliente->[Bebida]->[Bebida]
+cualesPuedeTomar (Cliente name stamina friends bebidas) [listaBebidas] = filter (bebidasNoMortales (Cliente name stamina friends bebidas)) [listaBebidas]
+
+bebidasNoMortales::Cliente->Bebida->Bool
+bebidasNoMortales (Cliente name stamina friends bebidas) bebida 
+	| resistencia (tomar sujeto bebida ) > 0 = True
+	| otherwise = False
+	where sujeto = (Cliente name stamina friends bebidas)

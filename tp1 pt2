@@ -66,20 +66,23 @@ puedeAgregar (Cliente name stamina friends _) (Cliente name2 stamina2 friends2 b
  	| elem (Cliente name2 stamina2 friends2 bebidas2) (friends) = False
  	| otherwise = True
 
+
+tomarTragos:: Cliente -> [Bebida] -> Cliente
+tomarTragos (Cliente name stamina friends bebidas) listaBebidas = foldl (tomar) (Cliente name stamina friends bebidas) listaBebidas
+
 dameOtro::Cliente -> Cliente
 dameOtro (Cliente name stamina friends bebidas) = tomar (Cliente name stamina friends bebidas) (last bebidas) 
 
---tomarTragos:: Cliente -> [Bebida] -> Cliente
-
---tomarTragos (Cliente name stamina friends bebidas) [listaBebidas] = map (tomar (Cliente name stamina friends bebidas)) [listaBebidas]
---tomarTragos (Cliente name stamina friends bebidas) [listaBebidas] = (\ bebida -> tomar (Cliente name stamina friends bebidas) bebida) listaBebidas
---pattern match failure
-
 cualesPuedeTomar::Cliente->[Bebida]->[Bebida]
-cualesPuedeTomar (Cliente name stamina friends bebidas) [listaBebidas] = filter (bebidasNoMortales (Cliente name stamina friends bebidas)) [listaBebidas]
+cualesPuedeTomar (Cliente name stamina friends bebidas) listaBebidas = filter (bebidasNoMortales (Cliente name stamina friends bebidas)) listaBebidas
 
 bebidasNoMortales::Cliente->Bebida->Bool
 bebidasNoMortales (Cliente name stamina friends bebidas) bebida 
 	| resistencia (tomar sujeto bebida ) > 0 = True
 	| otherwise = False
 	where sujeto = (Cliente name stamina friends bebidas)
+
+cuantasPuedeTomar::Cliente->[Bebida]->Int
+cuantasPuedeTomar (Cliente name stamina friends bebidas) listaBebidas = length ( cualesPuedeTomar (Cliente name stamina friends bebidas) listaBebidas)
+
+

@@ -1,21 +1,56 @@
---v.3 cambios: la funcion tomar va a recibir primero a un cliente y luego la bebida. Asi podemos usar la funcion de orden sup "map"
--- en la funcion tomar tragos
 
+import Data.List
 
 data Cliente = Cliente { nombre::String
-						,resistencia::Int
-						,amigos::[Cliente]
-						,yaTomo::[(Bebida)]} deriving(Show,Eq)
+                        ,resistencia::Int
+                        ,amigos::[Cliente]
+                        ,yaTomo::[(Bebida)]} deriving(Show,Eq)
 
+data Accion = Tomar Bebida | AgregarAmigo Cliente | Rescatarse Int deriving (Show)
+
+data Bebida = Klusener String | GrogXD | Tintico | Soda Int | JarraLoca deriving (Show, Eq)
+
+data Itinerario = UnItinerario {titulo :: String,
+                                duracion :: Float,
+                                acciones :: [Accion]} deriving (Show)
 
 
 rodri = Cliente "Rodri" 55 [] [(Tintico)]
 marcos = Cliente "Marcos" 40 [rodri] [(Klusener "guinda")]
 cristian = Cliente "Cristian" 2 [] [(GrogXD),(JarraLoca)]
 ana = Cliente "Ana" 120 [marcos,rodri] []
-chuckNorris =  Cliente "Chuck" 1000 [ana] (sodaInfinita (Soda 1))
+chuckNorris =  Cliente "Chuck" 1000 [ana] sodasDelUniverso
+robertoCarlos = Cliente "Roberto Carlos" 165 [] []
+sodasDelUniverso = map Soda [1..]
 
-data Bebida = Klusener String | GrogXD | Tintico | Soda Int | JarraLoca deriving(Show,Eq)
+
+
+intensidad :: Itinerario -> Float
+intensidad (UnItinerario _ durac acciones) = genericLength acciones / durac
+
+itineMasIntenso::Cliente->[Itinerario]->Cliente
+itineMasIntenso cliente listaDeItine = realizarItin (elMasIntenso listaDeItine) cliente
+
+elMasIntenso::[Itinerario]->Itinerario
+elMasIntenso listaDeItine = foldl1 esMasIntenso listaDeItine
+
+esMasIntenso x y 
+	| intensidad x > intensidad y = x
+	| otherwise = y
+
+itinerarioBasico = UnItinerario "Itinerario Basico" 5 [Tomar JarraLoca, Tomar (Klusener "chocolate"), Rescatarse 2, Tomar (Klusener "huevo")]
+mezclaExplosiva = UnItinerario "Mezcla Explosiva" 2.5 [Tomar GrogXD, Tomar GrogXD, Tomar (Klusener "huevo"), Tomar (Klusener "Frutilla")]
+salidaDeAmigos = UnItinerario "Salida de Amigos" 1 [Tomar (Soda 1), Tomar Tintico, AgregarAmigo robertoCarlos, Tomar JarraLoca] 
+
+realizarItin :: Itinerario -> Cliente -> Cliente
+realizarItin (UnItinerario _ _ acciones) client = foldl realizarAccion client acciones
+
+realizarAccion :: Cliente -> Accion -> Cliente
+realizarAccion cliente (Tomar bebida) = tomar cliente bebida
+realizarAccion cliente (AgregarAmigo amigo) = agregarAmigo cliente amigo
+realizarAccion cliente (Rescatarse tiempo) = rescatarse cliente tiempo
+
+
 
 tomar::Cliente->Bebida->Cliente
 
@@ -50,15 +85,15 @@ subirResistencia subir resistencia = resistencia + subir
 
 
 comoEsta::Cliente->String
-comoEsta (Cliente name stamina friends _)
+comoEsta (Cliente _ stamina friends _)
 	| stamina > 50 = "fresco"
 	| length(friends) > 1 = "piola"
 	| otherwise = "duro"
 
 
 agregarAmigo::Cliente->Cliente->Cliente
-agregarAmigo (Cliente name stamina friends bebidas) (Cliente name2 stamina2 friends2 bebidas2) 
-	| puedeAgregar (Cliente name stamina friends bebidas) (Cliente name2 stamina2 friends2 bebidas2) = Cliente name stamina (friends ++[(Cliente name2 stamina2 friends2 bebidas2)]) bebidas
+agregarAmigo (Cliente name stamina friends bebidas) otroCliente 
+	| puedeAgregar (Cliente name stamina friends bebidas) otroCliente = Cliente name stamina (friends ++[otroCliente]) bebidas
 	| otherwise = Cliente name stamina friends bebidas
 
 puedeAgregar:: Cliente -> Cliente-> Bool
@@ -67,29 +102,18 @@ puedeAgregar (Cliente name stamina friends _) (Cliente name2 stamina2 friends2 b
  	| elem (Cliente name2 stamina2 friends2 bebidas2) (friends) = False
  	| otherwise = True
 
-sodaInfinita::Bebida->[Bebida]
-sodaInfinita (Soda intencidad) = (Soda intencidad):(sodaInfinita (agregarIntencidad (Soda intencidad))) 
-
-agregarIntencidad::Bebida->Bebida
-agregarIntencidad (Soda intencidad) = Soda (intencidad+1)
-
 
 tomarTragos:: Cliente -> [Bebida] -> Cliente
-tomarTragos (Cliente name stamina friends bebidas) listaBebidas = foldl (tomar) (Cliente name stamina friends bebidas) listaBebidas
+tomarTragos  = foldl tomar  
 
 dameOtro::Cliente -> Cliente
-dameOtro (Cliente name stamina friends bebidas) = tomar (Cliente name stamina friends bebidas) (last bebidas) 
+dameOtro cliente = tomar cliente (last (yaTomo cliente)) 
 
 cualesPuedeTomar::Cliente->[Bebida]->[Bebida]
-cualesPuedeTomar (Cliente name stamina friends bebidas) listaBebidas = filter (bebidasNoMortales (Cliente name stamina friends bebidas)) listaBebidas
+cualesPuedeTomar cliente= filter (bebidasNoMortales cliente)
 
 bebidasNoMortales::Cliente->Bebida->Bool
-bebidasNoMortales (Cliente name stamina friends bebidas) bebida 
-	| resistencia (tomar sujeto bebida ) > 0 = True
-	| otherwise = False
-	where sujeto = (Cliente name stamina friends bebidas)
-
+bebidasNoMortales cliente bebida = resistencia (tomar cliente bebida ) > 0 
+	
 cuantasPuedeTomar::Cliente->[Bebida]->Int
-cuantasPuedeTomar (Cliente name stamina friends bebidas) listaBebidas = length ( cualesPuedeTomar (Cliente name stamina friends bebidas) listaBebidas)
-
-
+cuantasPuedeTomar cliente listaBebidas = length ( cualesPuedeTomar cliente listaBebidas)

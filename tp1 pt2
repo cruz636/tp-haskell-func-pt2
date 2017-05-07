@@ -1,4 +1,3 @@
-
 import Data.List
 
 data Cliente = Cliente { nombre::String
@@ -26,13 +25,13 @@ sodasDelUniverso = map Soda [1..]
 
 
 intensidad :: Itinerario -> Float
-intensidad (UnItinerario _ durac acciones) = genericLength acciones / durac
+intensidad (UnItinerario _ duracion acciones) = genericLength acciones / duracion
 
 itineMasIntenso::Cliente->[Itinerario]->Cliente
 itineMasIntenso cliente listaDeItine = realizarItin (elMasIntenso listaDeItine) cliente
 
 elMasIntenso::[Itinerario]->Itinerario
-elMasIntenso listaDeItine = foldl1 esMasIntenso listaDeItine
+elMasIntenso = foldl1 esMasIntenso 
 
 esMasIntenso x y 
 	| intensidad x > intensidad y = x
@@ -51,27 +50,27 @@ realizarAccion cliente (AgregarAmigo amigo) = agregarAmigo cliente amigo
 realizarAccion cliente (Rescatarse tiempo) = rescatarse cliente tiempo
 
 
-
 tomar::Cliente->Bebida->Cliente
 
-tomar (Cliente name stamina friends bebidas) (Klusener sabor) = Cliente name (bajarResistencia (length sabor) stamina) friends (bebidas++[(Klusener sabor)])
+tomar cliente (Klusener sabor) = cliente {resistencia=(bajarResistencia (length sabor) (resistencia cliente)),yaTomo=((yaTomo cliente)++[(Klusener sabor)])}
 
-tomar (Cliente name _ friends bebidas) (GrogXD)  = Cliente name 0 friends (bebidas++[(GrogXD)])
+tomar cliente GrogXD  = cliente{ resistencia = 0, yaTomo =((yaTomo cliente)++[(GrogXD)])}
 
-tomar (Cliente name stamina friends bebidas) (Tintico)  = Cliente name (subirResistencia (5 * length friends) stamina) friends (bebidas++[Tintico])
+tomar cliente Tintico  = cliente {resistencia =(subirResistencia (5 * length (amigos cliente)) (resistencia cliente)), yaTomo =((yaTomo cliente)++[Tintico])}
 
-tomar (Cliente name stamina friends bebidas) (Soda fuerza) = Cliente (agregarERP fuerza name) stamina friends (bebidas++[(Soda fuerza)])
+tomar cliente (Soda fuerza) = cliente {nombre=(agregarERP fuerza (nombre cliente)), yaTomo= ((yaTomo cliente)++[(Soda fuerza)])}
 
-tomar (Cliente name stamina friends bebidas) (JarraLoca) = Cliente name (bajarResistencia 10 stamina) (pasarJarra friends) (bebidas++[(JarraLoca)])
+tomar cliente JarraLoca = cliente {resistencia = (bajarResistencia 10 (resistencia cliente)),amigos= (pasarJarra (amigos cliente)), yaTomo=((yaTomo cliente)++[(JarraLoca)])}
 
 pasarJarra :: [Cliente] -> [Cliente]
 pasarJarra [] = []
 pasarJarra (unCliente : elResto) = tomar unCliente (JarraLoca) : (pasarJarra elResto)
 
+
 rescatarse::Cliente->Int->Cliente
-rescatarse (Cliente name stamina friends bebidas)  hora 
-	| hora > 3 = Cliente name (stamina+200) friends bebidas
-	| otherwise = Cliente name (stamina+100) friends bebidas
+rescatarse cliente  hora 
+	| hora > 3 = cliente { resistencia = (resistencia cliente)+200}
+	| otherwise = cliente{ resistencia = (resistencia cliente) + 100}
 
 
 agregarERP::Int->String->String
@@ -83,25 +82,20 @@ bajarResistencia disminuir resistencia = resistencia - disminuir
 subirResistencia::Int->Int-> Int
 subirResistencia subir resistencia = resistencia + subir
 
-
 comoEsta::Cliente->String
 comoEsta (Cliente _ stamina friends _)
 	| stamina > 50 = "fresco"
 	| length(friends) > 1 = "piola"
 	| otherwise = "duro"
 
-
 agregarAmigo::Cliente->Cliente->Cliente
-agregarAmigo (Cliente name stamina friends bebidas) otroCliente 
-	| puedeAgregar (Cliente name stamina friends bebidas) otroCliente = Cliente name stamina (friends ++[otroCliente]) bebidas
-	| otherwise = Cliente name stamina friends bebidas
+agregarAmigo cliente otroCliente 
+	| puedeAgregar cliente otroCliente = cliente{ amigos = (amigos cliente ++[otroCliente]) }
+	| otherwise = cliente
+
 
 puedeAgregar:: Cliente -> Cliente-> Bool
-puedeAgregar (Cliente name stamina friends _) (Cliente name2 stamina2 friends2 bebidas2)
- 	| name == name2 = False
- 	| elem (Cliente name2 stamina2 friends2 bebidas2) (friends) = False
- 	| otherwise = True
-
+puedeAgregar cliente otroCliente = not (nombre cliente == nombre otroCliente) && not( elem otroCliente (amigos cliente))
 
 tomarTragos:: Cliente -> [Bebida] -> Cliente
 tomarTragos  = foldl tomar  
